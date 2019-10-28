@@ -1,0 +1,11 @@
+org/datahem/protobuf/options/Options.class
+org/datahem/serializer/patcher/Patcher.class
+org/datahem/serializer/patcher/Config.class
+org/datahem/protobuf/options/Options$1.class
+org/datahem/serializer/patcher/Config$PatchConfig$Patch$TableReference.class
+org/datahem/serializer/patcher/ProtobufUtils$1.class
+org/datahem/serializer/patcher/Config$PatchConfig$Patch.class
+org/datahem/serializer/patcher/Config$PatchConfig.class
+io/anemos/metastore/core/proto/Convert.class
+org/datahem/serializer/patcher/ProtobufUtils.class
+io/anemos/metastore/core/proto/ProtoDescriptor.class

@@ -19,7 +19,8 @@ PATCH_CONFIG='{
         {
           "bigQueryProject":"mathem-ml-datahem-test",
           "bigQueryDataset":"test",
-          "bigQueryTable":"json_debug"
+          "bigQueryTable":"json_debug",
+          "createDisposition":"CREATE_IF_NEEDED"
         }
       ]
     }
@@ -46,6 +47,7 @@ public class Config {
 				public String bigQueryProject;
                 public String bigQueryDataset;
                 public String bigQueryTable;
+                public String createDisposition;
 			}
 		}
 	}

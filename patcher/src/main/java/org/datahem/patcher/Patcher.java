@@ -76,8 +76,9 @@ public class Patcher
                                 Bigquery.Tables.Patch bqTablePatch = bqTables.patch(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable, table);
                                 bqTablePatch.execute();
                             }
-                        }else{ //table doesn't exist, create empty table.
-                            Bigquery.Tables.Insert bqTableInsert = bqTables.insert(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable, table);
+                        }else if(tableReference.createDisposition.equals("CREATE_IF_NEEDED")){ //table doesn't exist, create empty table.
+                            table.setFriendlyName(tableReference.bigQueryTable);
+                            Bigquery.Tables.Insert bqTableInsert = bqTables.insert(tableReference.bigQueryProject, tableReference.bigQueryDataset, table);
                             bqTableInsert.execute();
                         }
                 }

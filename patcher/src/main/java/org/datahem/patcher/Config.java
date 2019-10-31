@@ -20,7 +20,14 @@ PATCH_CONFIG='{
           "bigQueryProject":"mathem-ml-datahem-test",
           "bigQueryDataset":"test",
           "bigQueryTable":"json_debug",
-          "createDisposition":"CREATE_IF_NEEDED"
+          "createDisposition":"CREATE_IF_NEEDED",
+          "timePartitioning":{
+              "field":"LastModifiedDate",
+              "requirePartitionFilter": false
+          },
+          "clustering":{
+              "fields":["foo","bar"]
+          }
         }
       ]
     }
@@ -48,6 +55,17 @@ public class Config {
                 public String bigQueryDataset;
                 public String bigQueryTable;
                 public String createDisposition;
+                public TimePartitioning timePartitioning;
+                public Clustering clustering;
+
+                static public class TimePartitioning{
+				    public String field;
+                    public boolean requirePartitionFilter;
+			    }
+
+                static public class Clustering{
+				    public List<String> fields;
+			    }
 			}
 		}
 	}

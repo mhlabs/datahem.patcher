@@ -303,8 +303,8 @@ public static ProtoDescriptor getProtoDescriptorFromCloudStorage(
     }
 
     public static TableSchema makeTableSchema(ProtoDescriptor protoDescriptor, Descriptor descriptor, String taxonomyResourcePattern) {
-        LOG.info("Descriptor fullname: " + descriptor.getFullName());
-        LOG.info("messageOptions: " + descriptor.getOptions().toString());
+        //LOG.info("Descriptor fullname: " + descriptor.getFullName());
+        //LOG.info("messageOptions: " + descriptor.getOptions().toString());
 
         TableSchema res = new TableSchema();
 
@@ -373,7 +373,7 @@ public static ProtoDescriptor getProtoDescriptorFromCloudStorage(
             }
         }
 		res.setFields(schema_fields);
-        LOG.info("table schema" + res.toString());
+        //LOG.info("table schema" + res.toString());
 		return res;
 	}   
 

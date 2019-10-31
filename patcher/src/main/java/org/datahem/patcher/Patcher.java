@@ -10,6 +10,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.Bigquery;
@@ -17,6 +18,8 @@ import com.google.api.services.bigquery.Bigquery.Tables;
 import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.api.services.bigquery.model.TableReference;
+import com.google.api.services.bigquery.model.TimePartitioning;
+import com.google.api.services.bigquery.model.Clustering;
 
 import com.google.protobuf.DescriptorProtos.FileDescriptorSet;
 import com.google.protobuf.Descriptors.FileDescriptor;
@@ -58,7 +61,7 @@ public class Patcher
                 ProtoDescriptor protoDescriptor = ProtobufUtils.getProtoDescriptorFromCloudStorage(patch.fileDescriptorBucket, patch.fileDescriptorName);
                 Descriptor descriptor = protoDescriptor.getDescriptorByName(patch.descriptorFullName);
                 TableSchema newSchema = ProtobufUtils.makeTableSchema(protoDescriptor, descriptor, patch.taxonomyResourcePattern);
-                LOG.info("eventSchema: " + newSchema.toString());
+                //LOG.info("eventSchema: " + newSchema.toString());
                 
                 Table table = new Table();
                 table.setSchema(newSchema);
@@ -66,20 +69,53 @@ public class Patcher
                 //TableSchema oldSchema = null;
 
                 for(Config.PatchConfig.Patch.TableReference tableReference : patch.tableReferences){
-                        Bigquery.Tables.Get bqTableGet = bqTables.get(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable);
-                        Table bqTable = bqTableGet.execute();
-                        if(bqTable != null){ //table exists
+                        TableReference tableRef = new TableReference()
+                            .setProjectId(tableReference.bigQueryProject)
+                            .setDatasetId(tableReference.bigQueryDataset)
+                            .setTableId(tableReference.bigQueryTable);
+
+                        TimePartitioning timePartitioning = new TimePartitioning()
+                            .setField(tableReference.timePartitioning.field)
+                            .setRequirePartitionFilter(tableReference.timePartitioning.requirePartitionFilter);
+
+                        Clustering clustering = new Clustering()
+                            .setFields(tableReference.clustering.fields);
+
+                        table
+                            .setTableReference(tableRef)
+                            .setTimePartitioning(timePartitioning)
+                            .setClustering(clustering);
+
+                        try{
+                            LOG.info("Get current table schema");
+                            Bigquery.Tables.Get bqTableGet = bqTables.get(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable);
+                            Table bqTable = bqTableGet.execute();
                             TableSchema oldSchema = bqTable.getSchema();
                             if(oldSchema.equals(newSchema)){ //if old schema equals new schema do nothing
                                 LOG.info("Current schema equals new schema");
                             }else{ //if old schema doesn't equals new schema, patch the table
+                                LOG.info("Current schema doesn't equal new schema -> patch table schema");
                                 Bigquery.Tables.Patch bqTablePatch = bqTables.patch(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable, table);
                                 bqTablePatch.execute();
                             }
-                        }else if(tableReference.createDisposition.equals("CREATE_IF_NEEDED")){ //table doesn't exist, create empty table.
-                            table.setFriendlyName(tableReference.bigQueryTable);
-                            Bigquery.Tables.Insert bqTableInsert = bqTables.insert(tableReference.bigQueryProject, tableReference.bigQueryDataset, table);
-                            bqTableInsert.execute();
+                        }catch (GoogleJsonResponseException e) {
+                            if(e instanceof GoogleJsonResponseException){
+                                int statusCode = e.getStatusCode();
+                                if(statusCode == 404 && tableReference.createDisposition.equals("CREATE_IF_NEEDED")){
+                                    LOG.info("Couldn't find table -> create new table");
+                                    /*
+                                    TableReference tableRef = new TableReference();
+                                    tableRef.setProjectId(tableReference.bigQueryProject);
+                                    tableRef.setDatasetId(tableReference.bigQueryDataset);
+                                    tableRef.setTableId(tableReference.bigQueryTable);
+                                    table.setTableReference(tableRef);*/
+                                    Bigquery.Tables.Insert bqTableInsert = bqTables.insert(tableReference.bigQueryProject, tableReference.bigQueryDataset, table);
+                                    bqTableInsert.execute();
+                                }else{
+                                    e.printStackTrace();
+                                    System.exit(1);
+                                }
+                            }
                         }
                 }
             }catch (Exception e) {

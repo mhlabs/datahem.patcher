@@ -61,66 +61,59 @@ public class Patcher
                 ProtoDescriptor protoDescriptor = ProtobufUtils.getProtoDescriptorFromCloudStorage(patch.fileDescriptorBucket, patch.fileDescriptorName);
                 Descriptor descriptor = protoDescriptor.getDescriptorByName(patch.descriptorFullName);
                 TableSchema newSchema = ProtobufUtils.makeTableSchema(protoDescriptor, descriptor, patch.taxonomyResourcePattern);
-                //LOG.info("eventSchema: " + newSchema.toString());
                 
-                Table table = new Table();
-                table.setSchema(newSchema);
+                Table pTable = new Table();
+                pTable.setSchema(newSchema);
                 Bigquery.Tables bqTables = new Bigquery.Builder(transport, jsonFactory, credential).build().tables();
-                //TableSchema oldSchema = null;
 
-                for(Config.PatchConfig.Patch.TableReference tableReference : patch.tableReferences){
-                        TableReference tableRef = new TableReference()
-                            .setProjectId(tableReference.bigQueryProject)
-                            .setDatasetId(tableReference.bigQueryDataset)
-                            .setTableId(tableReference.bigQueryTable);
+                for(Config.PatchConfig.Patch.Table table : patch.tables){
+                    TableReference tableRef = new TableReference()
+                        .setProjectId(table.tableReference.projectId)
+                        .setDatasetId(table.tableReference.datasetId)
+                        .setTableId(table.tableReference.tableId);
 
-                        TimePartitioning timePartitioning = new TimePartitioning()
-                            .setField(tableReference.timePartitioning.field)
-                            .setRequirePartitionFilter(tableReference.timePartitioning.requirePartitionFilter);
+                    TimePartitioning timePartitioning = new TimePartitioning()
+                        .setField(table.timePartitioning.field)
+                        .setRequirePartitionFilter(table.timePartitioning.requirePartitionFilter);
 
-                        Clustering clustering = new Clustering()
-                            .setFields(tableReference.clustering.fields);
+                    pTable
+                        .setTableReference(tableRef)
+                        .setTimePartitioning(timePartitioning);
 
-                        table
-                            .setTableReference(tableRef)
-                            .setTimePartitioning(timePartitioning)
-                            .setClustering(clustering);
+                    if(table.clustering != null
+                        && table.clustering.fields != null 
+                        && table.clustering.fields.size() > 0){
+                        pTable.setClustering(new Clustering().setFields(table.clustering.fields));
+                    }
 
-                        try{
-                            LOG.info("Get current table schema");
-                            Bigquery.Tables.Get bqTableGet = bqTables.get(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable);
-                            Table bqTable = bqTableGet.execute();
-                            TableSchema oldSchema = bqTable.getSchema();
-                            if(oldSchema.equals(newSchema)){ //if old schema equals new schema do nothing
-                                LOG.info("Current schema equals new schema");
-                            }else{ //if old schema doesn't equals new schema, patch the table
-                                LOG.info("Current schema doesn't equal new schema -> patch table schema");
-                                Bigquery.Tables.Patch bqTablePatch = bqTables.patch(tableReference.bigQueryProject, tableReference.bigQueryDataset, tableReference.bigQueryTable, table);
-                                bqTablePatch.execute();
-                            }
-                        }catch (GoogleJsonResponseException e) {
-                            if(e instanceof GoogleJsonResponseException){
-                                int statusCode = e.getStatusCode();
-                                if(statusCode == 404 && tableReference.createDisposition.equals("CREATE_IF_NEEDED")){
-                                    LOG.info("Couldn't find table -> create new table");
-                                    /*
-                                    TableReference tableRef = new TableReference();
-                                    tableRef.setProjectId(tableReference.bigQueryProject);
-                                    tableRef.setDatasetId(tableReference.bigQueryDataset);
-                                    tableRef.setTableId(tableReference.bigQueryTable);
-                                    table.setTableReference(tableRef);*/
-                                    Bigquery.Tables.Insert bqTableInsert = bqTables.insert(tableReference.bigQueryProject, tableReference.bigQueryDataset, table);
-                                    bqTableInsert.execute();
-                                }else{
-                                    e.printStackTrace();
-                                    System.exit(1);
-                                }
+                    try{
+                        LOG.info("Get current table schema");
+                        Bigquery.Tables.Get bqTableGet = bqTables.get(table.tableReference.projectId, table.tableReference.datasetId, table.tableReference.tableId);
+                        Table bqTable = bqTableGet.execute();
+                        TableSchema oldSchema = bqTable.getSchema();
+                        if(oldSchema.equals(newSchema)){ //if old schema equals new schema do nothing
+                            LOG.info("Current schema equals new schema");
+                        }else{ //if old schema doesn't equals new schema, patch the table
+                            LOG.info("Current schema doesn't equal new schema -> patch table schema");
+                            Bigquery.Tables.Patch bqTablePatch = bqTables.patch(table.tableReference.projectId, table.tableReference.datasetId, table.tableReference.tableId, pTable);
+                            bqTablePatch.execute();
+                        }
+                    }catch (GoogleJsonResponseException e) {
+                        if(e instanceof GoogleJsonResponseException){
+                            int statusCode = e.getStatusCode();
+                            if(statusCode == 404 && table.createDisposition.equals("CREATE_IF_NEEDED")){
+                                LOG.info("Couldn't find table -> create new table");
+                                Bigquery.Tables.Insert bqTableInsert = bqTables.insert(table.tableReference.projectId, table.tableReference.datasetId, pTable);
+                                bqTableInsert.execute();
+                            }else{
+                                e.printStackTrace();
+                                System.exit(1);
                             }
                         }
+                    }
                 }
             }catch (Exception e) {
                 e.printStackTrace();
-                //throw new RuntimeException(e);
                 System.exit(1);
             }
         }

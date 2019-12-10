@@ -15,11 +15,13 @@ PATCH_CONFIG='{
       "fileDescriptorName":"schemas.desc",
       "descriptorFullName":"mathem.distribution.tms_truck_temperature.truck_temperature.v1.TruckTemperature",
       "taxonomyResourcePattern":".*590903188537942776.*",
-      "tableReferences":[
+      "tables":[
         {
-          "bigQueryProject":"mathem-ml-datahem-test",
-          "bigQueryDataset":"test",
-          "bigQueryTable":"json_debug",
+          "tableReference":{
+            "projectId":"mathem-ml-datahem-test",
+            "datasetId":"test",
+            "tableId":"json_debug"
+          }
           "createDisposition":"CREATE_IF_NEEDED",
           "timePartitioning":{
               "field":"LastModifiedDate",
@@ -48,15 +50,19 @@ public class Config {
             public String fileDescriptorName;
             public String descriptorFullName;
             public String taxonomyResourcePattern;
-			public List<TableReference> tableReferences;
+			public List<Table> tables;
 			
-			static public class TableReference{
-				public String bigQueryProject;
-                public String bigQueryDataset;
-                public String bigQueryTable;
+			static public class Table{
+                public TableReference tableReference;
                 public String createDisposition;
                 public TimePartitioning timePartitioning;
                 public Clustering clustering;
+
+                static public class TableReference{
+                    public String projectId;
+                    public String datasetId;
+                    public String tableId;
+			    }
 
                 static public class TimePartitioning{
 				    public String field;

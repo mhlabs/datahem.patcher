@@ -67,6 +67,7 @@ public class Config {
                 static public class TimePartitioning{
 				    public String field;
                     public boolean requirePartitionFilter;
+                    public Long expirationMs;
 			    }
 
                 static public class Clustering{

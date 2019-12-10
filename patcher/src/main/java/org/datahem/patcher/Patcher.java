@@ -75,6 +75,10 @@ public class Patcher
                     TimePartitioning timePartitioning = new TimePartitioning()
                         .setField(table.timePartitioning.field)
                         .setRequirePartitionFilter(table.timePartitioning.requirePartitionFilter);
+                        
+                        if(table.timePartitioning.expirationMs != null){
+                            timePartitioning.setExpirationMs(table.timePartitioning.expirationMs);
+                        }
 
                     pTable
                         .setTableReference(tableRef)

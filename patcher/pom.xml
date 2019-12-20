@@ -6,7 +6,7 @@
 
   <groupId>org.datahem.serializer</groupId>
   <artifactId>patcher</artifactId>
-  <version>1.0</version>
+  <version>0.8.0</version>
 
   <name>patcher</name>
   
@@ -28,7 +28,7 @@
   <dependency>
         <groupId>com.google.apis</groupId>
         <artifactId>google-api-services-bigquery</artifactId>
-        <version>v2-rev434-1.25.0</version>
+        <version>v2-rev454-1.25.0</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/com.google.cloud/google-cloud-bigquery -->
 <dependency>

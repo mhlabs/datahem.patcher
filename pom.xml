@@ -6,7 +6,7 @@
 
   <groupId>org.datahem.serializer</groupId>
   <artifactId>patcher</artifactId>
-  <version>0.8.0</version>
+  <version>1.0.1</version>
 
   <name>patcher</name>
   
